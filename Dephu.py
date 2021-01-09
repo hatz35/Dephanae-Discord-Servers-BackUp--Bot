@@ -14,31 +14,20 @@ import asyncio
 from shutil import rmtree
 from Private import Secrets
 
-# ====================== [ INITIAL STAGE ] ======================
-prefix = "-"
+# ====================== [ I N I T I A L  S T A G E ] ======================
+prefix = "-" #You can change this anytime for a different preffix
 client = commands.Bot(command_prefix = prefix)
 client.remove_command('help')
 
 @client.event
 async def on_ready():
-    print ('Dephanae Speaking.')
+    print ('Dephanae Speaking.') #You can change this for Bot Status (Visible)
     await client.change_presence(activity=discord.Game(name="-ping"))
 
 
 os.chdir(os.getcwd())
-
-
-# ====================== [COMMANDS] ======================
-@client.command(aliases = ['test', 'Test'])
-async def _test(ctx):
-    text_channel_list = []
-    for channel in ctx.guild.text_channels:
-        text_channel_list.append(channel)
-    print(text_channel_list)
-    for i in text_channel_list:
-        await ctx.send(f'{i}')
-
-
+# ====================== [ C O M M A N D S ] ======================
+#CHECK PING
 @client.command(aliases = ['ping', 'Ping'])
 async def _ping(ctx):
     ping = round(client.latency * 1000)
@@ -77,7 +66,8 @@ async def _clear_error(ctx, error):
     else:
         raise error
 
-# ====================== [ BACKUP ] ======================
+# ====================== [ B A C K  U P  C O M M A N D S ] ======================
+#JSON
 def getJson(path):
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
@@ -86,6 +76,7 @@ def saveJson(jsonstruct, path):
     with open(path, 'w', encoding='utf-8') as f:
          json.dump(jsonstruct, f, indent = 2)
 
+#READING & DOWNLOADING FROM MESSAGE HISTORY
 async def history(ctx, channel_name, path, atcpath):
     if channel_name == "Default":
         channel_name = ctx.channel.name
@@ -126,6 +117,7 @@ async def history(ctx, channel_name, path, atcpath):
 
     saveJson(jsonstruct, path)
 
+#LOADING VALUES
 async def load(ctx, channel_name, path, atcpath):
     if channel_name == "Default":
         channel_name = ctx.channel.name
@@ -149,7 +141,8 @@ async def load(ctx, channel_name, path, atcpath):
 
     saveJson(jsonstruct, path)
 
-
+#CREATING FOLDER IN THE RIGHT DIRECTION
+@commands.has_permissions(administrator = True)
 @client.command(aliases = ['create', 'createBU', 'createbu', 'createBu'])
 async def _create(ctx, channel_name = "Default", full = False):
     if channel_name == "Default":
@@ -180,6 +173,15 @@ async def _create(ctx, channel_name = "Default", full = False):
             await msg.delete()
     return
 
+@_create.error
+async def _create_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
+
+#PUTTING DATA IN THE RIGHT DIRECTION
+@commands.has_permissions(administrator = True)
 @client.command(aliases = ['backup', 'Backup',])
 async def _backup(ctx, channel_name = "Default", full = False):
     if channel_name == "Default":
@@ -190,8 +192,6 @@ async def _backup(ctx, channel_name = "Default", full = False):
     json_file_name = channel_name + ".json"
     fullpath = os.path.join(data, channel_name)
     filepath = os.path.join(fullpath, json_file_name)
-
-
     if not os.path.exists(fullpath):
         if full:
             await _create(ctx, channel_name, True)
@@ -209,30 +209,17 @@ async def _backup(ctx, channel_name = "Default", full = False):
             await asyncio.sleep(4)
             await msg.delete()
     return
-#STUPID COMMAND NOW -> CAN DO MANUAL
-'''
-@client.command(aliases = ['delete', 'deleteBU', 'deletebu', 'deleteBu'])
-async def delete_backup(ctx):
-    channel_name  = ctx.channel.name
-    data = ".\Private\Data"
-    json_file_name = channel_name + ".json"
-    fullpath = os.path.join(data, channel_name)
-    filepath = os.path.join(fullpath, json_file_name)
-    await ctx.message.delete()
 
-    if not os.path.exists(fullpath):
-        msg = await ctx.send("No backup file exists for this channel.")
-        await asyncio.sleep(4)
-        await msg.delete()
-
+@_backup.error
+async def _backup_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
     else:
-        rmtree(fullpath)
-        msg = await ctx.send("I deleted the backup of this channel.")
-        await asyncio.sleep(4)
-        await msg.delete()
-'''
+        raise error
 
+#RECOVERING DATA WITH BACKUP
 @client.command(aliases = ['load', 'loadBU', 'loadbu', 'loadBu'])
+@commands.has_permissions(administrator = True)
 async def load_backup(ctx, channel_name = "Default", full = False):
     if channel_name == "Default":
         channel_name = ctx.channel.name
@@ -256,34 +243,22 @@ async def load_backup(ctx, channel_name = "Default", full = False):
             await asyncio.sleep(4)
             await msg.delete()
 
-@client.command(aliases = ['edit'])
-async def _edit(ctx, tokenID, *, newtext: typing.Optional[str]):
-    messages = await ctx.channel.history(limit=1000).flatten()
-    token_id = int(tokenID)
-    print (token_id)
-    for message in messages:
-
-        if token_id > 100 and token_id < 1000:
-            search = message.content[3:6]
-        elif token_id > 10 and token_id < 100:
-            search = message.content[3:5]
-        elif token_id > 0 and token_id < 10:
-            search = message.content[3:4]
-        else:
-            print("TokenFail?")
-
-        print(search)
-        if search == tokenID:
-            await message.edit(content=f"**[{tokenID}]**\n\n " + newtext)
-            break
-        else:
-            print(0)
-    await asyncio.sleep(3)
-    await ctx.message.delete()
-
+@load_backup.error
+async def load_backup_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
 # ====================== [ FULL SERVER - VERSION] ======================
+#CREATING THE SERVER DIRECTORY IN YOUR SYSTEM
 @client.command(aliases = ['createFull', 'createFullBu', 'createfullbu', 'createfullBu', 'createfull'])
+@commands.has_permissions(administrator = True)
 async def _createFull(ctx):
+    server_name = ctx.guild
+    data = ".\Private\Data" + f"\{server_name}"
+    if os.path.exists(data):
+        await ctx.send("You already have a backup folder of this server. Do `-backupFull` to update everything.")
+        return
     text_channel_list = []
     for channel in ctx.guild.text_channels:
         text_channel_list.append(channel)
@@ -291,9 +266,16 @@ async def _createFull(ctx):
         print(i)
         await _create(ctx, i.name, True)
 
+@_createFull.error
+async def _createFull_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
 
-
+#BACKING UP ALL SERVER DATA FROM THE SERVER
 @client.command(aliases = ['backupFull', 'backupfull'])
+@commands.has_permissions(administrator = True)
 async def _backupFull(ctx):
     text_channel_list = []
     for channel in ctx.guild.text_channels:
@@ -301,8 +283,16 @@ async def _backupFull(ctx):
     for i in text_channel_list:
         await _backup(ctx, i.name, True)
 
+@_backupFull.error
+async def _backupFull_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
 
-@client.command(aliases = ['loadAll', 'loadall'])
+#UPLOADING ALL SERVER DATA FROM YOUR BACKUP IN THE RESPECTIVE CHANNELS
+@client.command(aliases = ['loadFull', 'loadfull'])
+@commands.has_permissions(administrator = True)
 async def _loadFull(ctx):
     text_channel_list = []
     for channel in ctx.guild.text_channels:
@@ -310,7 +300,17 @@ async def _loadFull(ctx):
     for i in text_channel_list:
         await load_backup(ctx, i.name, True)
 
-@client.command(aliases = ['setAll', 'setall'])
+@_loadFull.error
+async def _loadFull_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
+
+
+#CREATING ALL CHANNELS IF YOU HAVE THEIR BACKUP
+@client.command(aliases = ['setFull', 'setfull'])
+@commands.has_permissions(administrator = True)
 async def _set(ctx):
     server_name = ctx.guild.name
     data = ".\Private\Data"
@@ -324,8 +324,17 @@ async def _set(ctx):
         for i in morestuff:
             await guild.create_text_channel(i)
 
-@client.command(aliases = ['jettAll', 'jettall'])
-async def _jettAll(ctx):
+@_set.error
+async def _set_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
+
+#DELETING ALL CHANNELS IF YOU HAVE THEIR BACKUP
+@client.command(aliases = ['deleteFull', 'deletefull'])
+@commands.has_permissions(administrator = True)
+async def _delete(ctx):
     server_name = ctx.guild.name
     data = ".\Private\Data"
     fullpath = os.path.join(data, server_name)
@@ -340,7 +349,12 @@ async def _jettAll(ctx):
         for i in morestuff:
             existing_channel = discord.utils.get(guild.channels, name=i)
             await existing_channel.delete()
-
+@_delete.error
+async def _delete_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"You can't do that, {ctx.author.name}.")
+    else:
+        raise error
 
 # ====================== [ LAST STAGE - RUNNING ] ======================
 client.run(Secrets.Token)
